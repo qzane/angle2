@@ -4,11 +4,16 @@ from pybrain.supervised.trainers import BackpropTrainer
 #from pybrain.tools.customxml import NetworkWriter, NetworkReader
 from time import sleep    
 import pickle
+global net,ds,trainer
+net = None
+ds = None
+trainer = None
+
 
 def init():
     global  net,ds,trainer
-    net = buildNetwork(256,500,2)
-    ds = SupervisedDataSet(256,2)
+    net = buildNetwork(2,50,1)
+    ds = SupervisedDataSet(2,1)
 '''
 def update_net(fname=None):
     global net
@@ -29,7 +34,7 @@ def mkds():
     f = file('data.data','rb')
     a = pickle.load(f)
     for i in a:
-        ds.addSample(i[0],i[1])
+        ds.addSample([i[0],i[1]],[i[2]])
     f.close()
     print 'load',len(ds)
 def train(n = 100):
@@ -40,26 +45,25 @@ def train(n = 100):
         j = trainer.train()
         print n-i,'left','err:',j
 
-def trainSave(n,logName='data.log',netName='net'):
+def trainSave(n=100,logName='data.log',netName='net'):
     global net,ds,trainer
-    trainer = BackpropTrainer(net, ds)
+    if not trainer:
+        trainer = BackpropTrainer(net, ds)
     filelog = file(logName,'a')
     for i in xrange(n):
         j = trainer.train()
         print n-i,'left err',j
-        if i & 0x1 == 0:
+        if i & 0x3 == 0:
             filelog.write("%d,%f\n"%(i,j))
             filelog.flush()
             print 'logged'
-            if i & 0x3f == 0:
+            if i & 0xff == 0:
                 filenet = file("%s%d"%(netName,i),'w')
                 pickle.dump(trainer.module,filenet)
                 filenet.close()
                 print 'dump'
-                
-            
 
-def set_learning_rate(rate=0.01,m=0):
+def set_learning_rate(rate=0.0001,m=0):
     global trainer
     trainer.descent.alpha = rate
     trainer.descent.momentum = m
